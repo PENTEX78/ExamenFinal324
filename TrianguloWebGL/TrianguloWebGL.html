@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Triángulo Degradado</title>
+</head>
+<body>
+<canvas id="glCanvas" width="700" height="700"></canvas>
+<script>
+    const canvas = document.getElementById("glCanvas");
+    const gl = canvas.getContext("webgl");
+
+    if (!gl) {
+        alert("WebGL no está disponible.");
+        throw new Error("WebGL no está disponible.");
+    }
+
+    // Vertex Shader
+    const vertexShaderSource = `
+        attribute vec2 aPosition;
+        attribute vec3 aColor;
+        varying vec3 vColor;
+        void main() {
+            vColor = aColor;
+            gl_Position = vec4(aPosition, 0.0, 1.0);
+        }
+    `;
+
+    // Fragment Shader
+    const fragmentShaderSource = `
+        precision mediump float;
+        varying vec3 vColor;
+        void main() {
+            gl_FragColor = vec4(vColor, 1.0);
+        }
+    `;
+
+    // Crear y compilar shaders
+    function createShader(gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error(gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+            throw new Error("Error al compilar el shader.");
+        }
+        return shader;
+    }
+
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+
+    // Crear y enlazar programa
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error(gl.getProgramInfoLog(program));
+        throw new Error("Error al enlazar el programa.");
+    }
+    gl.useProgram(program);
+
+    // Definir los datos del triángulo
+    const positions = new Float32Array([
+        0.0,  0.5,   // Vértice superior
+       -0.5, -0.5,   // Vértice inferior izquierdo
+        0.5, -0.5    // Vértice inferior derecho
+    ]);
+
+    const colors = new Float32Array([
+        1.0, 0.0, 0.0,   // Rojo brillante (vértice superior)
+        0.1, 0.0, 0.0,   // Rojo medio (vértice inferior izquierdo)
+        0.1, 0.0, 0.0    // Rojo oscuro (vértice inferior derecho)
+    ]);
+
+    // Crear buffer para posiciones
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+    const positionAttributeLocation = gl.getAttribLocation(program, "aPosition");
+    gl.enableVertexAttribArray(positionAttributeLocation);
+    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+    // Crear buffer para colores
+    const colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
+
+    const colorAttributeLocation = gl.getAttribLocation(program, "aColor");
+    gl.enableVertexAttribArray(colorAttributeLocation);
+    gl.vertexAttribPointer(colorAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+
+    // Dibujar el triángulo
+    gl.clearColor(0.7, 0.7, 0.7, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+</script>
+</body>
+</html>
